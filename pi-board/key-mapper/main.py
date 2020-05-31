@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import copy
-# !/usr/bin/python
 import struct
 import sys
 from functools import cmp_to_key
