@@ -1,0 +1,12 @@
+[Unit]
+Description=Create and mount the isticktoit usb driver
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash /usr/bin/isticktoit_usb.sh
+User=root
+
+[Install]
+WantedBy=sysinit.target
+
