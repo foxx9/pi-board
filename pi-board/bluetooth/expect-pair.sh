@@ -9,7 +9,7 @@ send "power on\r"
 expect -re $prompt
 send "scan on\r"
 send_user "\nSleeping\r"
-sleep 5
+sleep 30
 send_user "\nDone sleeping\r"
 send "scan off\r"
 expect "Controller"

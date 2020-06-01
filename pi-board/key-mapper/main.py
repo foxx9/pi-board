@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import copy
-import struct
-import sys
 from functools import cmp_to_key
+import copy
+import os
+import struct
+import yaml
 
 KeyboardMapping = {
     'right': 0x4f,
@@ -52,19 +53,7 @@ ControllerMapping = {
     'up': 'up'
 }
 
-KeyCodeMapping = {
-    172: 'home',
-    304: 'a',
-    305: 'b',
-    307: 'x',
-    308: 'y',
-    310: 'l1',
-    311: 'r1',
-    158: 'select',
-    315: 'start',
-    317: 'l3',
-    318: 'r3',
-}
+KeyCodeMapping = {}  # via config file
 
 
 class State:
@@ -173,25 +162,17 @@ def send_report_to_keyboard(path, report):
         fd.write(bytes(report))
 
 
-def startLoop():
-    usb_path = "/dev/hidg0"
-    # usb_path = "./text.txt"
-    infile_path = "/dev/input/event" + (sys.argv[1] if len(sys.argv) > 1 else "0")
-
+def eventListerner(event_path, usb_path, last_state, last_report):
     """
-    FORMAT represents the format used by linux kernel input event struct
-    See https://github.com/torvalds/linux/blob/v5.5-rc5/include/uapi/linux/input.h#L28
-    Stands for: long int, long int, unsigned short, unsigned short, unsigned int
-    """
+  FORMAT represents the format used by linux kernel input event struct
+  See https://github.com/torvalds/linux/blob/v5.5-rc5/include/uapi/linux/input.h#L28
+  Stands for: long int, long int, unsigned short, unsigned short, unsigned int
+  """
     FORMAT = 'llHHI'
     EVENT_SIZE = struct.calcsize(FORMAT)
-
-    # open file in binary mode
-    with open(infile_path, "rb") as in_file:
-
+    with open(event_path, "rb") as in_file:
+        print("Event mapping starting")
         event = in_file.read(EVENT_SIZE)
-        last_state = State()
-        last_report = None
         while event:
             (tv_sec, tv_usec, type, code, value) = struct.unpack(FORMAT, event)
 
@@ -206,10 +187,10 @@ def startLoop():
                         setattr(new_state, KeyCodeMapping[code], value == 1)
                 elif type == 3:
                     if code == 16:
-                        new_state.left = value != 1 and value != 0
+                        new_state.left = value != 1 and value != 0  # -1 int overflow
                         new_state.right = value == 1
                     elif code == 17:
-                        new_state.up = value != 1 and value != 0
+                        new_state.up = value != 1 and value != 0  # -1 int overflow
                         new_state.down = value == 1
                     elif code == 0:
                         new_state.left = negative_value_axis(value)
@@ -225,22 +206,49 @@ def startLoop():
 
                 if new_state != last_state:
                     #      print("changed")
-                    print(vars(new_state))
+                    # print(vars(new_state))
                     report = build_report(new_state, last_report)
-                    print(bytes(report))
+                    # print(bytes(report))
 
                     send_report_to_keyboard(usb_path, report)
                     last_report = report
                     last_state = new_state
 
             # else:
-            #     # Events with code, type and value == 0 are "separator" events
-            #     print("===========================================")
+            # Events with code, type and value == 0 are "separator" events
+            #   print("Event type %u, code %u, value %u at %d.%d" % (type, code, value, tv_sec, tv_usec))
+            #  print("===========================================")
 
             event = in_file.read(EVENT_SIZE)
 
 
+def startLoop():
+    usb_path = "/dev/hidg0"
+    # usb_path = "./text.txt"
+    # infile_path = "/dev/input/event" + (sys.argv[1] if len(sys.argv) > 1 else "0")
+
+    f = os.popen('ls /dev/input/event*')
+    events = f.read()
+    last_state = State()
+    last_report = None
+
+    # Multi event for one controller seems fix after installing xpadneo
+    # for event_path in events.splitlines():
+    #   threading.Thread(target=eventListerner, args=[event_path, usb_path, last_state, last_report]).start()
+    first_event_line = events.splitlines()[0]
+    eventListerner(first_event_line, usb_path, last_state, last_report)
+
+
 def checkMapping():
+    with open(r'../config/code-mapping.yml') as file:
+        documents = yaml.full_load(file)
+        for item, doc in documents.items():
+            KeyCodeMapping[item] = doc
+
+    count = len(KeyCodeMapping)
+    print(KeyCodeMapping)
+    print(str(count) + " controllers keys found in mapper")
+
     for button, mappedKey in ControllerMapping.items():
         if (mappedKey not in KeyboardMapping) and (mappedKey not in Modifiers):
             print(mappedKey, 'has no mapping')
