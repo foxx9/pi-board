@@ -42,7 +42,7 @@ udevadm trigger
 # Copy BT services
 cp ./bluetooth/ps4-bt-controller.service /etc/systemd/system/ps4-bt-controller.service
 cp ./bluetooth/standard-bt-controller.service /etc/systemd/system/standard-bt-controller.service
-cp ./bluetooth/ps4-bt-controller.timer /etc/systemd/system/ps4-bt-controller.timer
+cp ./bluetooth/standard-bt-controller.timer /etc/systemd/system/standard-bt-controller.timer
 cp ./key-mapper/pi-board-key-mapper.service /etc/systemd/system/pi-board-key-mapper.service
 cp ./usb/isticktoit.service /etc/systemd/system/isticktoit.service
 
