@@ -1,0 +1,13 @@
+[Unit]
+Description=PS4 BT controller service
+After=bluetooth.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ds4drv --emulate-xboxdrv
+User=root
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

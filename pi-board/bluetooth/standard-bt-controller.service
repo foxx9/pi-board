@@ -1,0 +1,7 @@
+[Unit]
+Description=Standard BT controller service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /boot/pi-board/bluetooth/connect-controller.sh
+User=root

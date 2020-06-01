@@ -1,0 +1,9 @@
+[Unit]
+Description=Run standard bt controller every minute
+After=bluetooth.target
+
+[Timer]
+OnUnitActiveSec=1min
+OnStartupSec=1min
+[Install]
+WantedBy=timers.target

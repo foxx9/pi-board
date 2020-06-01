@@ -17,12 +17,6 @@ echo "dtoverlay=dwc2" | sudo tee -a /boot/config.txt
 echo "dwc2" | sudo tee -a /etc/modules
 echo "libcomposite" | sudo tee -a /etc/modules
 
-#Create service to make it start as soon as possible when device is powered on
-echo "Creating USB service"
-cp ./usb/isticktoit.service /etc/systemd/system/isticktoit.service
-chmod 644 /etc/systemd/system/isticktoit.service
-systemctl enable isticktoit
-
 # Disable ERTM otherwise XBOX one controller wont remain connected after BT pairing
 echo "Disabling ERTM"
 /bin/cat <<EOM >/etc/modprobe.d/bluetooth.conf
@@ -45,13 +39,21 @@ cp ./usb/50-ds4drv.rules /etc/udev/rules.d/50-ds4drv.rules
 udevadm control --reload-rules
 udevadm trigger
 
-# Cronjob to reconnect the BT controller if connection lost
-echo "Creation crontab"
-crontab -l >mycron
-echo "* * * * * /bin/bash /boot/pi-board/bluetooth/connect-controller.sh" >>mycron
-#install new cron file
-crontab mycron
-rm mycron
+# Copy BT services
+cp ./bluetooth/ps4-bt-controller.service /etc/systemd/system/ps4-bt-controller.service
+cp ./bluetooth/standard-bt-controller.service /etc/systemd/system/standard-bt-controller.service
+cp ./bluetooth/ps4-bt-controller.timer /etc/systemd/system/ps4-bt-controller.timer
+cp ./key-mapper/pi-board-key-mapper.service /etc/systemd/system/pi-board-key-mapper.service
+cp ./usb/isticktoit.service /etc/systemd/system/isticktoit.service
+
+chmod 644 /etc/systemd/system/standard-bt-controller.service
+chmod 644 /etc/systemd/system/standard-bt-controller.timer
+chmod 644 /etc/systemd/system/pi-board-key-mapper.service
+chmod 644 /etc/systemd/system/isticktoit.service
+
+echo "register services"
+systemctl enable isticktoit
+systemctl enable pi-board-key-mapper
 
 echo "Rebooting"
 reboot

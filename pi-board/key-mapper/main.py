@@ -141,7 +141,6 @@ def build_report(state, last_report):
         pressed.append(0)
 
     report = [modifier, 0] + pressed
-    print(report)
     return report
 
 
@@ -240,7 +239,7 @@ def startLoop():
 
 
 def checkMapping():
-    with open(r'../config/code-mapping.yml') as file:
+    with open(r'/boot/pi-board/config/code-mapping.yml') as file:
         documents = yaml.full_load(file)
         for item, doc in documents.items():
             KeyCodeMapping[item] = doc
