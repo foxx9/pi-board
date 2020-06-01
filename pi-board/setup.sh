@@ -27,12 +27,12 @@ apt-get update
 apt-get -y upgrade
 apt-get -y install expect bluez evtest python3-pip python3 python3-pyudev python3-evdev dkms raspberrypi-kernel-headers git
 
+echo "Download xbox drivers"
 git clone https://github.com/atar-axis/xpadneo.git
 cd xpadneo && ./install.sh
 
-echo "Download xbox drivers"
 cd /boot/pi-board || exit
-pip3 install ds4drv pyyaml
+pip3 install ds4drv pyyaml evdev
 
 echo "Set up controller rules"
 cp ./usb/50-ds4drv.rules /etc/udev/rules.d/50-ds4drv.rules

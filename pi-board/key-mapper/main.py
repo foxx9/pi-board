@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-
-from functools import cmp_to_key
 import copy
 import os
-import struct
+from functools import cmp_to_key
+
 import yaml
+from evdev import ecodes, InputDevice
 
 KeyboardMapping = {
     'right': 0x4f,
@@ -144,16 +144,14 @@ def build_report(state, last_report):
     return report
 
 
-def trigger_active(value):
-    return value > 1024 / 30
+def positive_value_axis(cap, value):
+    diff = cap.max - cap.min
+    return value > diff / 2 + diff * 0.2
 
 
-def positive_value_axis(value):
-    return value > 32768 + 32768 * 0.5
-
-
-def negative_value_axis(value):
-    return value < 32768 - 32768 * 0.5
+def negative_value_axis(cap, value):
+    diff = cap.max - cap.min
+    return value < diff / 2 - diff * 0.2
 
 
 def send_report_to_keyboard(path, report):
@@ -161,64 +159,47 @@ def send_report_to_keyboard(path, report):
         fd.write(bytes(report))
 
 
-def eventListerner(event_path, usb_path, last_state, last_report):
-    """
-  FORMAT represents the format used by linux kernel input event struct
-  See https://github.com/torvalds/linux/blob/v5.5-rc5/include/uapi/linux/input.h#L28
-  Stands for: long int, long int, unsigned short, unsigned short, unsigned int
-  """
-    FORMAT = 'llHHI'
-    EVENT_SIZE = struct.calcsize(FORMAT)
-    with open(event_path, "rb") as in_file:
-        print("Event mapping starting")
-        event = in_file.read(EVENT_SIZE)
-        while event:
-            (tv_sec, tv_usec, type, code, value) = struct.unpack(FORMAT, event)
+def event_listener(event_path, usb_path, last_state, last_report):
+    device = InputDevice(event_path)
+    capabilities = device.capabilities()
+    abs_cap = dict(capabilities.get(ecodes.EV_ABS))
 
-            if type == 1 or type == 3:
-                #    print("Event type %u, code %u, value %u at %d.%d" % \
-                #          (type, code, value, tv_sec, tv_usec))
-                new_state = copy.copy(last_state)
+    for event in device.read_loop():
+        code = event.code
+        value = event.value
+        if event.type == ecodes.EV_KEY or event.type == ecodes.EV_ABS:
+            new_state = copy.copy(last_state)
+            # button pressed
+            if event.type == ecodes.EV_KEY:
+                if code in KeyCodeMapping:
+                    setattr(new_state, KeyCodeMapping[code], value == 1)
+            elif event.type == ecodes.EV_ABS:
+                if code == ecodes.ABS_HAT0X:
+                    new_state.left = value == -1
+                    new_state.right = value == 1
+                elif code == ecodes.ABS_HAT0Y:
+                    new_state.up = value == -1
+                    new_state.down = value == 1
+                elif code == ecodes.ABS_X:
+                    new_state.left = negative_value_axis(abs_cap[code], value)
+                    new_state.right = positive_value_axis(abs_cap[code], value)
+                elif code == ecodes.ABS_Y:
+                    new_state.up = negative_value_axis(abs_cap[code], value)
+                    new_state.down = positive_value_axis(abs_cap[code], value)
+                elif code == ecodes.ABS_BRAKE or code == ecodes.ABS_Z:
+                    new_state.l2 = positive_value_axis(abs_cap[code], value)
+                elif code == ecodes.ABS_GAS or code == ecodes.ABS_RZ:
+                    new_state.r2 = positive_value_axis(abs_cap[code], value)
+                # code 3 and 4 are right stick
 
-                # button pressed
-                if type == 1:
-                    if code in KeyCodeMapping:
-                        setattr(new_state, KeyCodeMapping[code], value == 1)
-                elif type == 3:
-                    if code == 16:
-                        new_state.left = value != 1 and value != 0  # -1 int overflow
-                        new_state.right = value == 1
-                    elif code == 17:
-                        new_state.up = value != 1 and value != 0  # -1 int overflow
-                        new_state.down = value == 1
-                    elif code == 0:
-                        new_state.left = negative_value_axis(value)
-                        new_state.right = positive_value_axis(value)
-                    elif code == 1:
-                        new_state.up = negative_value_axis(value)
-                        new_state.down = positive_value_axis(value)
-                    elif code == 10:
-                        new_state.l2 = trigger_active(value)
-                    elif code == 9:
-                        new_state.r2 = trigger_active(value)
-                    # code 3 and 4 are right stick
-
-                if new_state != last_state:
-                    #      print("changed")
-                    # print(vars(new_state))
-                    report = build_report(new_state, last_report)
-                    # print(bytes(report))
-
-                    send_report_to_keyboard(usb_path, report)
-                    last_report = report
-                    last_state = new_state
-
-            # else:
-            # Events with code, type and value == 0 are "separator" events
-            #   print("Event type %u, code %u, value %u at %d.%d" % (type, code, value, tv_sec, tv_usec))
-            #  print("===========================================")
-
-            event = in_file.read(EVENT_SIZE)
+            if new_state != last_state:
+                # print("changed")
+                # print(vars(new_state))
+                report = build_report(new_state, last_report)
+                # print(bytes(report))
+                send_report_to_keyboard(usb_path, report)
+                last_report = report
+                last_state = new_state
 
 
 def startLoop():
@@ -231,11 +212,11 @@ def startLoop():
     last_state = State()
     last_report = None
 
-    # Multi event for one controller seems fix after installing xpadneo
+    # Multi event for one controller seems fixed after installing xpadneo
     # for event_path in events.splitlines():
     #   threading.Thread(target=eventListerner, args=[event_path, usb_path, last_state, last_report]).start()
     first_event_line = events.splitlines()[0]
-    eventListerner(first_event_line, usb_path, last_state, last_report)
+    event_listener(first_event_line, usb_path, last_state, last_report)
 
 
 def checkMapping():
