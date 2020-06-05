@@ -3,7 +3,6 @@ import fcntl
 import os
 import signal
 import struct
-import time
 
 event = os.popen('cat /proc/bus/input/devices | grep haptic -A 10 | grep Handlers |  cut -f2 -d"="').read()
 
@@ -33,7 +32,6 @@ LOOP = True
 def graceful_quit(signum, frame):
     global LOOP
     LOOP = False
-    time.sleep(1)
     raise OSError("Force stop reading open files")
 
 
