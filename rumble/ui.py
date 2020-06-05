@@ -59,6 +59,8 @@ def toggle():
 
 update_ui()
 
+RG350_A_KEYCODE = 306
+
 loop = True
 while loop:
     clock.tick(FPS)
@@ -68,12 +70,12 @@ while loop:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_POWER or event.key == pygame.K_ESCAPE:
                 loop = False
-            elif event.key == 306 or event.key == pygame.K_RETURN:
+            elif event.key == RG350_A_KEYCODE or event.key == pygame.K_RETURN:
                 toggle()
 
     screen.fill((0, 0, 0))
-    screen.blit(textsurfaceStatus, (20, 50))
-    screen.blit(textsurfaceAction, (20, 100))
+    screen.blit(textsurfaceStatus, (25, 50))
+    screen.blit(textsurfaceAction, (25, 100))
     pygame.display.flip()
 
 pygame.display.quit()
