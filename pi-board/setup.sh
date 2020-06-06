@@ -20,12 +20,12 @@ echo "libcomposite" | sudo tee -a /etc/modules
 # Disable ERTM otherwise XBOX one controller wont remain connected after BT pairing
 echo "Disabling ERTM"
 /bin/cat <<EOM >/etc/modprobe.d/bluetooth.conf
-options bluetooth disable_ertm=1
+options bluetooth disable_ertm=Y
 EOM
 
 apt-get update
 apt-get -y upgrade
-apt-get -y install expect bluez evtest python3-pip python3 python3-pyudev python3-evdev dkms raspberrypi-kernel-headers git
+apt-get -y install expect bluez evtest joystick python3-pip python3 python3-pyudev python3-evdev dkms raspberrypi-kernel-headers git
 
 echo "Download xbox drivers"
 git clone https://github.com/atar-axis/xpadneo.git
@@ -45,11 +45,12 @@ cp ./bluetooth/standard-bt-controller.service /etc/systemd/system/standard-bt-co
 cp ./bluetooth/standard-bt-controller.timer /etc/systemd/system/standard-bt-controller.timer
 cp ./key-mapper/pi-board-key-mapper.service /etc/systemd/system/pi-board-key-mapper.service
 cp ./usb/isticktoit.service /etc/systemd/system/isticktoit.service
+cp ./rumble/pi-board-rumble.service /etc/systemd/system/pi-board-rumble.service
 
 chmod 644 /etc/systemd/system/standard-bt-controller.service
-chmod 644 /etc/systemd/system/standard-bt-controller.timer
 chmod 644 /etc/systemd/system/pi-board-key-mapper.service
 chmod 644 /etc/systemd/system/isticktoit.service
+chmod 644 /etc/systemd/system/pi-board-rumble.service
 
 echo "register services"
 systemctl enable isticktoit

@@ -1,7 +1,12 @@
 [Unit]
 Description=Standard BT controller service
+After=bluetooth.target
 
 [Service]
-Type=oneshot
+RestartSec=10
+Restart=on-failure
 ExecStart=/bin/bash /boot/pi-board/bluetooth/connect-controller.sh
 User=root
+
+[Install]
+WantedBy=multi-user.target

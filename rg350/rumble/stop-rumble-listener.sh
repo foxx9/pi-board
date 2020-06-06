@@ -3,6 +3,6 @@
 PID=$(cat ~/.pi-board-rumbler/pid.txt)
 
 if [ -n "$PID" ]; then
-  kill -15 "$PID"
+  kill -9 "$PID"
   rm ~/.pi-board-rumbler/pid.txt
 fi

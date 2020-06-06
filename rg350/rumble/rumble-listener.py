@@ -3,8 +3,10 @@ import fcntl
 import os
 import signal
 import struct
+import time
 
 event = os.popen('cat /proc/bus/input/devices | grep haptic -A 10 | grep Handlers |  cut -f2 -d"="').read()
+console_fd = os.open('/dev/console', os.O_NOCTTY)
 
 if not event:
     print("No haptic device found")
@@ -28,6 +30,8 @@ FORCE_HIGH = 0x04
 KDSETLED = 0x4B32
 LOOP = True
 
+FCNTL_SLEEP = 0.005
+
 
 def graceful_quit(signum, frame):
     global LOOP
@@ -41,6 +45,8 @@ signal.signal(signal.SIGTERM, graceful_quit)
 
 def send_led_state(led):
     fcntl.ioctl(console_fd, KDSETLED, led)
+    time.sleep(FCNTL_SLEEP)
+    print("sent :" + str(led))
 
 
 def map_code(c):
@@ -54,13 +60,15 @@ def map_code(c):
         return FORCE_HIGH
 
 
-def handle_code(c):
+def handle_code(c, last):
+    if last == c:
+        send_led_state(0)
     if c != 0:
         send_led_state(c)
 
 
-console_fd = os.open('/dev/console', os.O_NOCTTY)
-current_code = 0
+current_code = 0x00
+last_code = 0x00
 with open(event_path, "rb") as in_file:
     event = in_file.read(EVENT_SIZE)
     while LOOP and event:
@@ -70,7 +78,8 @@ with open(event_path, "rb") as in_file:
             current_code = current_code | map_code(code)
         elif e_type == EV_SYN:
             # print('should send' + str(current_code))
-            handle_code(current_code)
+            handle_code(current_code, last_code)
+            last_code = current_code
             current_code = 0
         event = in_file.read(EVENT_SIZE)
 

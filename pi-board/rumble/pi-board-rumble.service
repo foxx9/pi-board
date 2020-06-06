@@ -1,0 +1,14 @@
+[Unit]
+Description=PI-BOARD Rumble
+After=bluetooth.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /boot/pi-board/rumble/led-to-rumble.py
+User=root
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
