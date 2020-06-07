@@ -42,3 +42,7 @@ Wait a few seconds then use the pair mode on your controller :
  - Hold share + PS button for PS4 controller, you will need to do this pairing after every reboot, and you should not forget to turn the controller off after use (hold PS button) to not drain the battery
 
 
+### Rumble 
+
+In progress. Experimental
+
