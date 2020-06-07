@@ -30,7 +30,7 @@ Register the service so it starts on boot :
 You need to put its mac address in `config/controller-mac-address.txt`
 You can retrieve the mac address by joining it to a computer and checking its settings or via bluetoohctl by starting a scan ( https://www.linux-magazine.com/Issues/2017/197/Command-Line-bluetoothctl)
 then enable the service :
-`systemctl enable standard-bt-controller.service`
+`systemctl enable standard-bt-controller`
 
 Reboot the device :
 `reboot`
