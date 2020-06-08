@@ -1,36 +1,42 @@
 #!/usr/bin/python
-import fcntl
 import os
 import signal
 import struct
 import time
+from datetime import datetime
 
-event = os.popen('cat /proc/bus/input/devices | grep haptic -A 10 | grep Handlers |  cut -f2 -d"="').read()
+event_haptic = os.popen(
+    "cat /proc/bus/input/devices | grep haptic -A 10 | grep Handlers  | grep -o '.......$'"
+).read()
+event_keyboard = os.popen(
+    "cat /proc/bus/input/devices | grep iSticktoit -A 10 | grep Handlers  | grep -o '.......$'"
+).read()
+
 console_fd = os.open('/dev/console', os.O_NOCTTY)
 
-if not event:
+if not event_haptic:
     print("No haptic device found")
     exit()
 
-event_path = '/dev/input/' + event.rstrip().strip()
+if not event_keyboard:
+    print("No Raspberry keyboard found")
+    exit()
 
-print("Will listen on " + event_path)
+event_haptic_path = '/dev/input/' + event_haptic.rstrip().strip()
+event_keyboard_path = '/dev/input/' + event_keyboard.rstrip().strip()
+
+print("Will listen on " + event_haptic_path)
 
 FORMAT = 'llHHI'
 EVENT_SIZE = struct.calcsize(FORMAT)
 
+EV_LED = 17
+
 EV_FF = 21
 EV_SYN = 0
 
-FORCE_EMPTY = 0x00
-FORCE_LOW = 0x01
-FORCE_MIDDLE = 0x02
-FORCE_HIGH = 0x04
-
-KDSETLED = 0x4B32
 LOOP = True
-
-FCNTL_SLEEP = 0.005
+FCNTL_SLEEP = 0.001
 
 
 def graceful_quit(signum, frame):
@@ -43,45 +49,42 @@ signal.signal(signal.SIGINT, graceful_quit)
 signal.signal(signal.SIGTERM, graceful_quit)
 
 
-def send_led_state(led):
-    fcntl.ioctl(console_fd, KDSETLED, led)
-    time.sleep(FCNTL_SLEEP)
-    print("sent :" + str(led))
+def convert(number):
+    dt = datetime.now()
+    as_bin = bin(number)[2:].zfill(5)
+    all = []
+    for i in range(0, 5):
+        all.append(struct.pack(FORMAT, dt.second, dt.microsecond, EV_LED, i, int(as_bin[len(as_bin) - 1 - i])))
+    all.append(struct.pack(FORMAT, dt.second, dt.microsecond, EV_SYN, 0, 0))
+    return all
 
 
-def map_code(c):
-    if c == 0:
-        return FORCE_EMPTY
-    elif c < 7:
-        return FORCE_LOW
-    elif c < 15:
-        return FORCE_MIDDLE
-    else:
-        return FORCE_HIGH
+def send_led_state(number):
+    with open(event_keyboard_path, 'rb+') as fd:
+        instructions = convert(number)
+        for instruction in instructions:
+            fd.write(instruction)
+        time.sleep(FCNTL_SLEEP)
 
 
-def handle_code(c, last):
-    if last == c:
-        send_led_state(0)
-    if c != 0:
-        send_led_state(c)
+state_flag = True
 
 
-current_code = 0x00
-last_code = 0x00
-with open(event_path, "rb") as in_file:
-    event = in_file.read(EVENT_SIZE)
-    while LOOP and event:
-        (tv_sec, tv_usec, e_type, code, value) = struct.unpack(FORMAT, event)
+def handle_code(c):
+    global state_flag
+    to_send = c | (16 if state_flag else 0)
+    state_flag = not state_flag
+    send_led_state(to_send)
+
+
+with open(event_haptic_path, "rb") as in_file:
+    event_haptic = in_file.read(EVENT_SIZE)
+    while LOOP and event_haptic:
+        (tv_sec, tv_usec, e_type, code, value) = struct.unpack(FORMAT, event_haptic)
         if e_type == EV_FF and value == 1:
             # we stack events of the same SYN REPORT
-            current_code = current_code | map_code(code)
-        elif e_type == EV_SYN:
-            # print('should send' + str(current_code))
-            handle_code(current_code, last_code)
-            last_code = current_code
-            current_code = 0
-        event = in_file.read(EVENT_SIZE)
+            handle_code(code)
+        event_haptic = in_file.read(EVENT_SIZE)
 
 os.close(console_fd)
 print("Stopped")

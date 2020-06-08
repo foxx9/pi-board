@@ -1,3 +1,4 @@
+import math
 import signal
 
 from evdev import ecodes, InputDevice, ff
@@ -8,6 +9,7 @@ dev = InputDevice('/dev/input/event0')
 def graceful_quit(signum, frame):
     global LOOP
     LOOP = False
+    raise OSError("Force stop reading open files")
 
 
 signal.signal(signal.SIGINT, graceful_quit)
@@ -23,34 +25,33 @@ def create_effect(strong, weak):
     )
 
 
-multiplier_weak = int(0xffff / 8)
-multiplier_strong = int(multiplier_weak / 4)
-repeat = 8
+def ease_function(x):
+    return -(math.cos(math.pi * x) - 1) / 2
 
-effects = [None] * 8
-for i in range(8):
-    effects[i] = dev.upload_effect(create_effect(i * multiplier_strong, i * multiplier_weak))
 
-WeirdMap = {
-    6: 3,
-    5: 6,
-    4: 2,
-    3: 5,
-    2: 1,
-    1: 4
-}
+SHAKE_RUMBLE_STRONG_MAGNITUDE_MAX = 0x7FFF
+SHAKE_RUMBLE_WEAK_MAGNITUDE_MAX = 0x7FFFF
+
+effects = []
+for i in range(16):
+    print("registering event " + str(i))
+    # from  https://github.com/soarqin/RG350_pcsx4all/blob/master/src/port/sdl/port.cpp
+    weak = int(SHAKE_RUMBLE_WEAK_MAGNITUDE_MAX * ease_function((i + 1) / 16))
+    # Only enable the strong motor with greater than 7 events
+    if i > 7:
+        strong = int(SHAKE_RUMBLE_STRONG_MAGNITUDE_MAX * ease_function((i + 1 - 8) / 8))
+    else:
+        strong = 0
+    effects.append(dev.upload_effect(create_effect(strong, weak)))
 
 LOOP = True
 with open('/dev/hidg0', "rb") as in_file:
     event = in_file.read(1)
     while LOOP and event:
         value = int.from_bytes(event, byteorder='big')
-        if value in WeirdMap:
-            value = WeirdMap[value]
-        dev.write(ecodes.EV_FF, effects[value], repeat)
-
-        print(value)
+        value = value & 15  # bitwise to only keep the right value
+        dev.write(ecodes.EV_FF, effects[value], 1)
         event = in_file.read(1)
 
-for i in range(len(effects)):
-    dev.erase_effect(i)
+# for i in range(len(effects)):
+#    dev.erase_effect(i)
