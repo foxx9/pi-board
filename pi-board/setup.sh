@@ -55,6 +55,7 @@ chmod 644 /etc/systemd/system/pi-board-rumble.service
 echo "register services"
 systemctl enable isticktoit
 systemctl enable pi-board-key-mapper
+systemctl enable pi-board-rumble
 
 echo "Rebooting"
 reboot

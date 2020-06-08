@@ -44,5 +44,13 @@ Wait a few seconds then use the pair mode on your controller :
 
 ### Rumble 
 
-In progress. Experimental
+Experimental
+
+On your rg350 : Copy `pi-board-rumble.opk` located in the rg350/rumble folder into your rg350 in `/media/data/apps`,  enable open the Pi-board rumble app located in the applications section from the device and enable rumbling
+
+
+ - Does not work with PS4 controller :  https://github.com/chrippa/ds4drv#known-issueslimitations
+
+ 
+
 

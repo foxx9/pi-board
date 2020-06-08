@@ -1,6 +1,6 @@
 #!/bin/sh
 
-OPK_NAME=Pi-board-rumble.opk
+OPK_NAME=pi-board-rumble.opk
 
 echo ${OPK_NAME}
 

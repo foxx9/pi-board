@@ -53,5 +53,5 @@ with open('/dev/hidg0', "rb") as in_file:
         dev.write(ecodes.EV_FF, effects[value], 1)
         event = in_file.read(1)
 
-# for i in range(len(effects)):
-#    dev.erase_effect(i)
+for i in range(len(effects)):
+    dev.erase_effect(i)
