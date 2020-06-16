@@ -1,6 +1,19 @@
 # Pi-Board project for RG350
 
+With the support of HDMI now present on the RG350, but because controller support is non existing, I have created this project to make it possible to fake keyboard inputs with the help of a RaspberryPi Zero W, as the rg350 has all of its controls mapped to keyboard keys.
+
+
+This idea is to connect the Pi to the rg350 via OTG port and make it act as a keyboard (thanks https://randomnerdtutorials.com/raspberry-pi-zero-usb-keyboard-hid/ ), then connect the controller with BT to the pi and translate controller inputs to keyboard inputs to send to the Pi.
+
 Tested only with Ps4 dualshock and Xbox one controller 
+
+Demo:
+
+
+[![Controller input test](https://img.youtube.com/vi/TKLczUVuZvI/0.jpg)](https://www.youtube.com/watch?v=TKLczUVuZvI)
+
+[![In game](https://img.youtube.com/vi/Mz3i_3aWrC8/0.jpg)](https://www.youtube.com/watch?v=Mz3i_3aWrC8)
+
 
 ## SD card setup
 Here are the instructions for a fresh install of the raspbian image.
@@ -50,6 +63,13 @@ On your rg350 : Copy `pi-board-rumble.opk` located in the rg350/rumble folder in
 
 
  - Does not work with PS4 controller :  https://github.com/chrippa/ds4drv#known-issueslimitations
+ 
+Demo : 
+
+[![Rumble app + hdmi test](https://img.youtube.com/vi/9bJ52vWhtq4/0.jpg)](https://www.youtube.com/watch?v=9bJ52vWhtq4
+)
+
+
 
  
 
