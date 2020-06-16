@@ -3,7 +3,7 @@
 With the support of HDMI now present on the RG350, but because controller support is non existing, I have created this project to make it possible to fake keyboard inputs with the help of a RaspberryPi Zero W, as the rg350 has all of its controls mapped to keyboard keys.
 
 
-This idea is to connect the Pi to the rg350 via OTG port and make it act as a keyboard (thanks https://randomnerdtutorials.com/raspberry-pi-zero-usb-keyboard-hid/ ), then connect the controller with BT to the pi and translate controller inputs to keyboard inputs to send to the Pi.
+This idea is to connect the Pi to the rg350 via OTG port and make it act as a keyboard (thanks https://randomnerdtutorials.com/raspberry-pi-zero-usb-keyboard-hid/ ), then connect the controller with BT to the pi and translate controller inputs to keyboard inputs to send to the RG350.
 
 Tested only with Ps4 dualshock and Xbox one controller 
 
